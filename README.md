@@ -77,6 +77,15 @@ streamlit run app.py
    ```
 5. Click **Deploy**. You get a public `*.streamlit.app` URL in a couple of minutes.
 
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `ModuleNotFoundError: No module named 'docx'` (or `pypdf`, `google`) | `requirements.txt` is missing, misnamed, or in the wrong folder. It must be named exactly `requirements.txt`, sit next to `app.py` (or in the repo root), and be saved as **UTF-8**. Commit, push, then **Manage app → ⋮ → Reboot app**. |
+| "API key was rejected" | Re-check `GEMINI_API_KEY` in Streamlit **Secrets** (no extra spaces or quotes inside the key). |
+| "Model name was not found" | Change the model in the sidebar, e.g. `gemini-2.5-flash`. |
+| Changes don't show after deploy | Push to GitHub, then reboot the app so dependencies reinstall. |
+
 ## Project structure
 
 ```
