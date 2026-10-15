@@ -11,8 +11,17 @@ import os
 import re
 
 import streamlit as st
-from docx import Document
-from pypdf import PdfReader
+
+# Optional file-reading libraries: if one is missing on the server, the app still
+# starts and shows a clear message instead of crashing with ModuleNotFoundError.
+try:
+    from pypdf import PdfReader
+except ImportError:  # pragma: no cover
+    PdfReader = None
+try:
+    from docx import Document  # provided by the "python-docx" package
+except ImportError:  # pragma: no cover
+    Document = None
 
 # --------------------------------------------------------------------------- #
 # Configuration
@@ -116,6 +125,8 @@ def extract_text(filename: str, data: bytes):
     name = (filename or "").lower()
     try:
         if name.endswith(".pdf"):
+            if PdfReader is None:
+                raise AnalysisError("PDF support is unavailable: 'pypdf' is not installed. Add 'pypdf' to requirements.txt and reboot the app.")
             reader = PdfReader(io.BytesIO(data))
             if reader.is_encrypted:
                 try:
@@ -126,6 +137,8 @@ def extract_text(filename: str, data: bytes):
             return "\n".join(pages).strip(), len(reader.pages)
 
         if name.endswith(".docx"):
+            if Document is None:
+                raise AnalysisError("DOCX support is unavailable: 'python-docx' is not installed. Add 'python-docx' to requirements.txt and reboot the app, or upload a PDF/TXT instead.")
             doc = Document(io.BytesIO(data))
             parts = [p.text for p in doc.paragraphs]
             for table in doc.tables:
