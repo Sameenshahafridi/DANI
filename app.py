@@ -10,10 +10,49 @@ import json
 import os
 import re
 
+import importlib
+import importlib.util
+import subprocess
+import sys
+
+# --------------------------------------------------------------------------- #
+# Safety net: install missing packages at startup
+# --------------------------------------------------------------------------- #
+# Normally Streamlit Cloud installs everything from requirements.txt. If that file
+# is missing / misnamed / unreadable, this block installs the packages itself so the
+# app still works. (The proper fix is still a correct requirements.txt.)
+REQUIRED_PACKAGES = {  # import name -> pip package name
+    "pypdf": "pypdf",
+    "docx": "python-docx",
+    "google.genai": "google-genai",
+}
+
+
+def _has_module(name: str) -> bool:
+    try:
+        return importlib.util.find_spec(name) is not None
+    except ValueError:  # module already loaded without a spec
+        return True
+    except ImportError:  # parent package missing, e.g. "google"
+        return False
+
+
+def ensure_packages() -> None:
+    missing = [pip_name for mod, pip_name in REQUIRED_PACKAGES.items() if not _has_module(mod)]
+    if not missing:
+        return
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--quiet", "--disable-pip-version-check", *missing])
+        importlib.invalidate_caches()
+    except Exception as exc:  # network / permission problems: the app reports it later
+        print(f"[ensure_packages] could not install {missing}: {exc}", file=sys.stderr)
+
+
+ensure_packages()
+
 import streamlit as st
 
-# Optional file-reading libraries: if one is missing on the server, the app still
-# starts and shows a clear message instead of crashing with ModuleNotFoundError.
+# If a library is still unavailable, the app starts anyway and shows a clear message.
 try:
     from pypdf import PdfReader
 except ImportError:  # pragma: no cover
